@@ -2,6 +2,94 @@
 
 {% block content %}
 
-<p>this is our student details page</p>
+<body class="text-center">
+    <div class="container">
+        <form method='POST' class="form-register" style="color:white", enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            <h1 class="h3 mb-3 font-weight-normal">Register a student here</h1>
+            <br>
+            {{ form.name.label() }}
+            {{ form.name(class="form-control", placeholder="Enter Name: ") }}
+            
+            {{ form.roll_no.label() }}
+            {{ form.roll_no(class="form-control", placeholder="Enter Roll Number: ") }}
+            
+            {{ form.email.label() }}
+            {{ form.email(class="form-control", placeholder="Enter Email Address: ") }}
+                       
+            {{ form.mobile_no.label() }}
+            {{ form.mobile_no(class="form-control", placeholder="Enter Mobile Number: ") }}
+            
+            {{ form.dept.label() }}
+            {{ form.dept(class="form-control") }}
+            
+            {{ form.course.label() }}
+            {{ form.course(class="form-control") }}
+            
+            {{ form.section.label() }}
+            {{ form.section(class="form-control") }}
+            
+            {{ form.year.label() }}
+            {{ form.year(class="form-control") }}
+            
+            {{ form.semester.label() }}
+            {{ form.semester(class="form-control") }}
+            
+            {{ form.gender.label() }}
+            {{ form.gender(class="form-control") }}
+
+            {{ form.teacher.label() }}
+            {{ form.teacher(class="form-control", placeholder="Enter Teacher Name: ") }}
+           
+            {{ form.photo_sample.label() }}
+            {{ form.photo_sample(class="form-control") }}
+             <br>
+            {{ form.submit(class="btn btn-lg btn-block btn-primary") }}
+
+        </form>
+    </div>
+
+    <div>
+        <table class="table table-hover table-dark" style="margin-top: 60px">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Roll Number</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Mobile Number</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Course</th>
+                    <th scope="col">Section</th>
+                    <th scope="col">Year</th>
+                    <th scope="col">Semester</th>
+                    <th scope="col">Gender</th>
+                    <th scope="col">Teacher</th>
+                    <th scope="col">Photo Sample</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for student in students %}
+                    <tr>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.roll_no }}</td>
+                        <td>{{ student.email }}</td>
+                        <td>{{ student.mobile_no }}</td>
+                        <td>{{ student.dept }}</td>
+                        <td>{{ student.course }}</td>
+                        <td>{{ student.section }}</td>
+                        <td>{{ student.year }}</td>
+                        <td>{{ student.semester }}</td>
+                        <td>{{ student.gender }}</td>
+                        <td>{{ student.teacher }}</td>
+                        <td>{{ student.photo_sample }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+
 
 {% endblock%}
+           
