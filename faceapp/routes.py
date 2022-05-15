@@ -12,90 +12,7 @@ import os
 import cv2
 from PIL import Image
 import numpy as np
-
-camera = cv2.VideoCapture(0)
-
-def attendance(self, id, roll_no, name):
-        with open('attendance.csv', 'r+', newline='\n') as file:
-            data_list = file.readlines()
-            name_list = []
-            for line in data_list:
-                entry = line.split((','))
-                name_list.append(entry[0])
-
-            if((id not in name_list) and (roll_no not in name_list) and (name not in name_list)):
-                now = datetime.now()
-                date_str = now.strftime ('%d/%m/%Y')
-                time_str = now.strftime('%H:%M:%S')
-                file.writelines(f'\n{id}, {roll_no}, {name}, {time_str}, {date_str}, Present')
-
-def gen_frames():
-    while True:
-        success, frame=camera.read()
-        if not success:
-            break
-        else:
-            def draw_box(image, classifier, scale_factor, min_neighbour, color, text, trained_classifier):
-                gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                descriptors = classifier.detectMultiScale(gray_image, scale_factor, min_neighbour)
-
-                coordinates = []
-
-                for (x, y, w, h) in descriptors:
-                    cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                    id, predict = trained_classifier.predict(gray_image[y:y+h, x:x+w])
-                    confidence = int((100 * (1-predict / 300)))
-
-                    result = Student.query.filter_by(id=id)
-     
-                    if result is not None:
-                        student_name = result.name
-
-                    # my_cursor.execute('select * from student where student_id=' + str(id))
-                    # roll = my_cursor.fetchone()
-                        roll_no = result.roll_no
-
-                    # my_cursor.execute('select * from student where student_id=' + str(id))
-                    # s_id = my_cursor.fetchone()
-                        student_id = result.id
-
-                        if confidence > 80:
-                            cv2.putText(image, f'ID: {student_id}', (x, y-55), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1)
-                            cv2.putText(image, f'Roll No.: {roll_no}', (x, y-30), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1)
-                            cv2.putText(image, f'Name: {student_name}', (x, y-5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1)
-                            attendance(student_id, roll_no, student_name)
-                    else:
-                        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 0, 255), 1)
-                        cv2.putText(image, 'Unknown Face', (x, y-5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1)
-
-                    coordinates = [x, y, w, h]
-                return coordinates
-
-
-            def recognizer(image, trained_classifier, face_cascade):
-                coordinates = draw_box(image, face_cascade, 1.1, 10, (255, 25, 255), 'Face', trained_classifier)
-                return image
-                        
-
-            face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-            trained_classifier = cv2.face.LBPHFaceRecognizer_create()
-            trained_classifier.read('classifier.xml')
-
-        
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = recognizer(frame, trained_classifier, face_cascade)
-            frame = buffer.tobytes()
-        
-            yield(b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-            if cv2.waitKey(1) == 13:
-                break
-
-        camera.release()
-        cv2.destroyAllWindows()
-
-            
+          
 
 
 @app.route('/')
@@ -130,26 +47,26 @@ def student_details():
                                     photo_sample=form.photo_sample.data)
 
             pic_filename = secure_filename(create_student.photo_sample.filename)
-            pic_name = str(uuid.uuid1()) + "_" + pic_filename
+            pic_name = str(uuid.uuid1()) + "." + str(create_student.id) + "_" + pic_filename
 
             saver = request.files['photo_sample']
             saver.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
             
-            faces = []
-            ids = []
-            img = Image.open(saver).convert('L')
-            img_np = np.array(img, dtype='uint8')
-            faces.append(img_np)
+            # faces = []
+            # ids = []
+            # img = Image.open(saver).convert('L')
+            # img_np = np.array(img, dtype='uint8')
+            # faces.append(img_np)
   
-            id = create_student.id
-            ids.append(id)
-            id_np = np.array(ids)
-            ids = [0] * len(faces)
-            classifier = cv2.face.LBPHFaceRecognizer_create()
-            classifier.train(faces, np.array(ids))
-            classifier.write('classifier.xml')
-            cv2.destroyAllWindows()
-            flash(f'Data Set Trained Successfully!', category='success')
+            # id = create_student.id
+            # ids.append(id)
+            # id_np = np.array(ids)
+            # ids = [0] * len(faces)
+            # classifier = cv2.face.LBPHFaceRecognizer_create()
+            # classifier.train(faces, np.array(ids))
+            # classifier.write('classifier.xml')
+            # cv2.destroyAllWindows()
+            # flash(f'Data Set Trained Successfully!', category='success')
 
             create_student.photo_sample = pic_name
 
@@ -198,17 +115,6 @@ def register():
 
 
 
-@app.route('/attendance_details')
-def attendance_details():
-    return render_template('attendance_details.html')
-
-
-
-@app.route('/take_attendance')
-def take_attendance():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-
 @app.route('/logout')
 def logout():
     logout_user()
@@ -216,3 +122,150 @@ def logout():
     return redirect(url_for('home'))
 
 
+@app.route('/attendance_details')
+def attendance_details():
+    return render_template('attendance_details.html')
+
+
+@app.route('/train_data')
+def train_data():
+    data_dir = ('uploads')
+    path = [os.path.join(data_dir, file) for file in os.listdir(data_dir)]
+        
+    faces = []
+    ids = []
+
+    for image in path:
+        # img = cv2.imread(image)
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = Image.open(image).convert('L')    # conversion to grayscale image
+        image_np = np.array(img, 'uint8')
+        # img_path = os.path.split(image)[1]
+        # id = Student.query.filter_by(photo_sample=img_path).first()
+        id = int(os.path.split(image)[1].split('.')[1].split('_')[0])
+        
+
+        faces.append(image_np)
+        ids.append(id)
+        # cv2.imshow('Training', image_np)
+        cv2.waitKey(1) == 13
+    ids = np.array(ids)
+    # labels=[0]*len(faces)
+
+    classifier = cv2.face.LBPHFaceRecognizer_create()
+    classifier.train(faces, ids)
+    classifier.write('classifier.xml')
+
+    cv2.destroyAllWindows()
+    flash(f'Data Sets Trained Successfully!', category='success')
+    return render_template('train_data.html')
+
+
+def attendance(id, roll_no, name):
+    with open('attendance.csv', 'r+', newline='\n') as file:
+        data_list = file.readlines()
+        name_list = []
+        for line in data_list:
+            entry = line.split((','))
+            name_list.append(entry[0])
+
+        if((id not in name_list) and (roll_no not in name_list) and (name not in name_list)):
+            now = datetime.now()
+            date_str = now.strftime ('%d/%m/%Y')
+            time_str = now.strftime('%H:%M:%S')
+            file.writelines(f'\n{id}, {roll_no}, {name}, {time_str}, {date_str}, Present')
+
+def draw_box(image, classifier, scale_factor, min_neighbour, color, text, trained_classifier):
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    descriptors = classifier.detectMultiScale(gray_image, scale_factor, min_neighbour)
+
+    coordinates = []
+
+    for (x, y, w, h) in descriptors:
+        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        id, predict = trained_classifier.predict(gray_image[y:y+h, x:x+w])
+        confidence = int((100 * (1-predict / 300)))
+
+        result = Student.query.get(id)
+     
+        if result is not None:
+            student_name = result.name
+            roll_no = result.roll_no
+            student_id = result.id
+
+            if confidence > 80:
+                cv2.putText(image, f'ID: {student_id}', (x, y-55), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1)
+                cv2.putText(image, f'Roll No.: {roll_no}', (x, y-30), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1)
+                cv2.putText(image, f'Name: {student_name}', (x, y-5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1)
+                attendance(student_id, roll_no, student_name)
+        else:
+            cv2.rectangle(image, (x, y), (x+w, y+h), (0, 0, 255), 1)
+            cv2.putText(image, 'Unknown Face', (x, y-5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1)
+
+        coordinates = [x, y, w, h]
+    return coordinates
+
+
+def recognizer(image, trained_classifier, face_cascade):
+    coordinates = draw_box(image, face_cascade, 1.1, 10, (255, 25, 255), 'Face', trained_classifier)
+    return image
+
+
+def gen_frames():
+    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    trained_classifier = cv2.face.LBPHFaceRecognizer_create()
+    camera = cv2.VideoCapture(0)
+    trained_classifier.read('classifier.xml')
+    while True:
+        success, frame = camera.read()
+        if not success:
+            break
+        else: 
+            frame = recognizer(frame, trained_classifier, face_cascade)
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+@app.route('/take_attendance')
+def take_attendance():
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+
+
+
+
+
+
+
+                        
+
+# def gen_frames():
+#     while True:
+#         success, frame = camera.read()
+#         if not success:
+#             break
+#         else:
+#             def recognizer(image, trained_classifier, face_cascade):
+#                 coordinates = draw_box(image, face_cascade, 1.1, 10, (255, 25, 255), 'Face', trained_classifier)
+#                 return image
+
+#             face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+#             trained_classifier = cv2.face.LBPHFaceRecognizer_create()
+#             trained_classifier.read('classifier.xml')
+
+        
+#             ret, buffer = cv2.imencode('.jpg', frame)
+#             frame = recognizer(frame, trained_classifier, face_cascade)
+#             # frame = buffer.tobytes()
+        
+#             # yield(b'--frame\r\n'
+#             #     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+#             if cv2.waitKey(1) == 13:
+#                 break
+
+#             camera.release()
+#             cv2.destroyAllWindows()
